@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Messenger Pigeon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'EB Garamond', Georgia, serif;
+    min-height:100vh; min-height:100dvh;
+    background:radial-gradient(120% 90% at 50% 18%, #3f86ef 0%, #1a5cd6 42%, #0b2f83 100%);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+
+  .mp-root{
+    position:relative; width:100%; max-width:430px; height:100vh; height:100dvh; max-height:900px;
+    overflow:hidden;
+  }
+  @media (min-width:480px){
+    .mp-root{ border-radius:22px; box-shadow:0 40px 100px rgba(4,10,40,0.55); margin:20px 0; height:860px; }
+  }
+
+  /* ---------- envelope scene ---------- */
+  .mp-envelope-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+  .mp-envelope-btn{all:unset;cursor:pointer;display:block;}
+  .mp-envelope-graphic{position:relative;width:224px;height:152px;transition:transform .3s ease;animation:mpEnvelopeFloat 4.5s ease-in-out infinite;}
+  .mp-envelope-btn:hover .mp-envelope-graphic{transform:translateY(-4px);}
+  .mp-envelope-btn:active .mp-envelope-graphic{transform:translateY(1px) scale(.98);}
+  @keyframes mpEnvelopeFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+  .mp-env-body{position:absolute;inset:0;border-radius:6px;background:linear-gradient(160deg,#d1b46d,#a9884f 60%,#96763f);box-shadow:0 22px 40px rgba(4,16,52,0.45), inset 0 0 0 1px rgba(90,64,24,0.45);}
+  .mp-env-stain{position:absolute;inset:0;border-radius:6px;background:radial-gradient(55% 60% at 18% 88%, rgba(83,55,17,0.22), transparent 60%),radial-gradient(45% 50% at 88% 12%, rgba(83,55,17,0.16), transparent 55%),radial-gradient(30% 40% at 60% 92%, rgba(83,55,17,0.14), transparent 60%);}
+  .mp-env-flap{position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(160deg,#c6a660,#9d7d46);clip-path:polygon(0 0,100% 0,50% 100%);box-shadow:inset 0 -8px 12px rgba(58,38,10,0.28);}
+  .mp-env-twine-h{position:absolute;top:52%;left:-8px;right:-8px;height:6px;background:linear-gradient(90deg,#573a20,#7e5a37,#573a20);transform:rotate(-7deg);border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.35);}
+  .mp-env-twine-v{position:absolute;top:6px;bottom:6px;left:50%;width:6px;background:linear-gradient(180deg,#573a20,#7e5a37,#573a20);transform:translateX(-50%) rotate(5deg);border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.35);}
+  .mp-env-knot{position:absolute;top:50%;left:50%;width:22px;height:22px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 30%, #8f5f34, #5c3b1d);box-shadow:0 2px 5px rgba(0,0,0,.45);}
+  .mp-envelope-hint{margin-top:20px;text-align:center;color:rgba(230,240,255,0.68);font-size:12.5px;letter-spacing:2.5px;text-transform:uppercase;font-family:'Special Elite',monospace;}
+
+  /* ---------- paper scene ---------- */
+  .mp-paper-group{position:absolute;left:20px;right:20px;top:64px;bottom:36px;display:none;}
+  .mp-paper-group.mp-anim-in{animation:mpPaperIn .55s ease;}
+  @keyframes mpPaperIn{from{opacity:0;transform:scale(.94) translateY(16px);}to{opacity:1;transform:scale(1) translateY(0);}}
+  .mp-paper-group.mp-delivering{animation:mpPaperFly 1.05s cubic-bezier(.55,0,.85,.35) forwards;}
+  @keyframes mpPaperFly{
+    0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1;}
+    28%{transform:translateY(-14px) rotate(-3deg) scale(.99);opacity:1;}
+    100%{transform:translateY(-640px) rotate(16deg) scale(.7);opacity:0;}
+  }
+  .mp-paper-sheet{
+    position:absolute;inset:0;border-radius:7px;
+    display:flex;flex-direction:column;overflow:hidden;
+    background:
+      repeating-linear-gradient(115deg, rgba(139,107,67,0.055) 0px, rgba(139,107,67,0.055) 1px, transparent 1px, transparent 6px),
+      repeating-linear-gradient(25deg, rgba(139,107,67,0.045) 0px, rgba(139,107,67,0.045) 1px, transparent 1px, transparent 9px),
+      radial-gradient(120% 80% at 12% 6%, rgba(180,150,100,0.14), transparent 60%),
+      radial-gradient(100% 70% at 92% 96%, rgba(150,120,80,0.16), transparent 55%),
+      #f4ecd8;
+    box-shadow:
+      0 1px 0 0 #e6d9b7, 0 3px 0 0 #dbcba3,
+      0 4px 10px rgba(0,0,0,0.3), 0 20px 44px rgba(4,10,30,0.4);
+  }
+  .mp-calendar{position:relative;flex:0 0 auto;padding-top:20px;text-align:center;opacity:.62;}
+  .mp-calendar-month{font-family:'Special Elite',monospace;letter-spacing:3px;color:#8b6b43;font-size:12.5px;text-transform:uppercase;text-shadow:1px 1px 0 rgba(255,255,255,.5), -1px -1px 1px rgba(101,74,38,.3);}
+  .mp-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:10px 24px 0;}
+  .mp-calendar-cell{all:unset;font-family:'Special Elite',monospace;font-size:10.5px;color:#8b6b43;text-align:center;text-shadow:1px 1px 0 rgba(255,255,255,.55), -1px -1px 1px rgba(101,74,38,.35);border-radius:4px;padding:2px 0;}
+  .mp-calendar-cell.mp-day{cursor:pointer;transition:background .15s ease, color .15s ease, transform .1s ease;}
+  .mp-calendar-cell.mp-day:hover{background:rgba(139,107,67,0.16);color:#5c3d1c;}
+  .mp-calendar-cell.mp-day:active{transform:scale(.9);background:rgba(139,107,67,0.28);}
+  .mp-calendar-cell.mp-today{color:#5c3d1c;font-weight:700;}
+  .mp-calendar-cell.mp-stamped{color:#26314f;text-decoration:underline;text-decoration-color:rgba(38,49,79,0.4);}
+
+  .mp-rolodex-btn{all:unset;cursor:pointer;position:absolute;top:12px;right:18px;display:none;filter:drop-shadow(0 3px 5px rgba(0,0,0,.25));}
+  .mp-rolodex-btn.mp-anim-in{animation:mpFadeIn .5s ease;}
+  @keyframes mpFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .mp-rolodex-btn:hover{transform:translateY(-2px);}
+  .mp-rolodex-btn:active{transform:translateY(1px) scale(.96);}
+
+  .mp-write-area{position:relative;flex:1 1 auto;min-height:0;display:none;flex-direction:column;padding:16px 26px 22px;}
+  .mp-write-area.mp-anim-in{animation:mpFadeIn .4s ease;}
+  .mp-write-label{font-family:'Special Elite',monospace;letter-spacing:3px;font-size:11.5px;color:#6b4f2a;text-transform:uppercase;margin-bottom:14px;min-height:14px;}
+  .mp-note-input{flex-grow:1;resize:none;border:none;outline:none;background:transparent;font-family:'EB Garamond',Georgia,serif;font-style:italic;font-size:17px;color:#26314f;line-height:1.65;caret-color:#26314f;width:100%;}
+  .mp-note-input::placeholder{color:rgba(38,49,79,0.38);}
+
+  .mp-pigeon-row{display:flex;justify-content:center;margin-top:8px;}
+  .mp-pigeon-btn{all:unset;cursor:pointer;}
+  .mp-pigeon-wrap{animation:mpPigeonBob 2.6s ease-in-out infinite;}
+  @keyframes mpPigeonBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+  .mp-pigeon-btn.mp-nudge .mp-pigeon-wrap{animation:mpPigeonNudge .32s ease;}
+  @keyframes mpPigeonNudge{0%,100%{transform:translateX(0) rotate(0);}25%{transform:translateX(-5px) rotate(-4deg);}75%{transform:translateX(5px) rotate(4deg);}}
+
+  /* ---------- lighthouse / picker overlay ---------- */
+  .mp-picker-overlay{position:absolute;inset:0;z-index:5;display:none;}
+  .mp-dark-overlay{position:absolute;inset:0;background:rgba(4,8,20,0);}
+  .mp-dark-overlay.mp-anim-dark{animation:mpDarken .35s ease forwards;}
+  @keyframes mpDarken{to{background:rgba(4,8,20,0.92);}}
+  .mp-beam{
+    position:absolute;left:50%;bottom:-60px;width:14px;height:560px;
+    background:linear-gradient(to top, rgba(255,244,214,0.5), rgba(255,244,214,0) 75%);
+    transform-origin:bottom center;filter:blur(7px);opacity:0;
+  }
+  .mp-beam.mp-anim-beam{animation:mpSweep 1s ease-in-out forwards;}
+  @keyframes mpSweep{
+    0%{transform:translateX(-50%) rotate(-55deg);opacity:0;}
+    16%{opacity:1;}
+    50%{transform:translateX(-50%) rotate(55deg);}
+    100%{transform:translateX(-50%) rotate(0deg);opacity:.5;}
+  }
+  .mp-picker-box{
+    position:absolute;left:28px;right:28px;top:50%;
+    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px;
+    opacity:0;transform:translateY(-50%);
+  }
+  .mp-picker-box.mp-anim-box{animation:mpBoxIn .5s ease forwards;animation-delay:.5s;}
+  @keyframes mpBoxIn{from{opacity:0;transform:translateY(-46%) scale(.96);}to{opacity:1;transform:translateY(-50%) scale(1);}}
+  .mp-cat-tab{
+    all:unset;cursor:pointer;color:#f6efdd;font-family:'EB Garamond',serif;font-size:16.5px;
+    padding:11px 14px;border-radius:9px;border-left:3px solid #caa968;
+    background:rgba(255,255,255,0.045);transition:background .15s ease, transform .15s ease;
+  }
+  .mp-cat-tab:hover{background:rgba(255,255,255,0.14);transform:translateX(3px);}
+  .mp-cat-tab:active{background:rgba(255,255,255,0.2);}
+  .mp-picker-close{all:unset;cursor:pointer;position:absolute;top:-38px;right:0;color:rgba(246,239,221,0.7);font-family:'Special Elite',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;}
+
+  /* ---------- toast ---------- */
+  .mp-toast{
+    position:absolute;left:20px;right:20px;bottom:18px;z-index:20;
+    background:rgba(20,20,30,0.88);border:1px solid rgba(232,192,114,0.35);border-radius:12px;
+    padding:11px 16px;color:#f4ecd8;font-family:'EB Garamond',serif;font-size:13.5px;text-align:center;
+    opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .3s ease, transform .3s ease;
+  }
+  .mp-toast.mp-show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="mp-root" id="mpRoot">
+
+  <div class="mp-envelope-stage" id="envelopeScene">
+    <button class="mp-envelope-btn" id="envelopeBtn" aria-label="Open the envelope to write a note">
+      <div class="mp-envelope-graphic">
+        <div class="mp-env-body"></div>
+        <div class="mp-env-stain"></div>
+        <div class="mp-env-flap"></div>
+        <div class="mp-env-twine-h"></div>
+        <div class="mp-env-twine-v"></div>
+        <div class="mp-env-knot"></div>
+      </div>
+    </button>
+    <div class="mp-envelope-hint">tap to open</div>
+  </div>
+
+  <div class="mp-paper-group" id="paperGroup">
+    <div class="mp-paper-sheet">
+
+      <div class="mp-calendar">
+        <div class="mp-calendar-month" id="calendarMonth"></div>
+        <div class="mp-calendar-grid" id="calendarGrid"></div>
+      </div>
+
+      <button class="mp-rolodex-btn" id="rolodexBtn" aria-label="Open note categories">
+        <svg width="36" height="36" viewBox="0 0 34 34" fill="none">
+          <rect x="4" y="20" width="26" height="9" rx="2" fill="#7a5735"></rect>
+          <path d="M6 20 C6 9 28 9 28 20 Z" fill="#caa968" stroke="#5b3d22" stroke-width="1.5"></path>
+          <line x1="10" y1="12" x2="10" y2="20" stroke="#5b3d22" stroke-width="1"></line>
+          <line x1="14" y1="9.5" x2="14" y2="20" stroke="#5b3d22" stroke-width="1"></line>
+          <line x1="18" y1="9" x2="18" y2="20" stroke="#5b3d22" stroke-width="1"></line>
+          <line x1="22" y1="9.5" x2="22" y2="20" stroke="#5b3d22" stroke-width="1"></line>
+          <line x1="26" y1="12" x2="26" y2="20" stroke="#5b3d22" stroke-width="1"></line>
+          <circle cx="30" cy="24.5" r="2.4" fill="#5b3d22"></circle>
+        </svg>
+      </button>
+
+      <div class="mp-write-area" id="writeArea">
+        <div class="mp-write-label" id="categoryLabel"></div>
+        <label class="mp-visually-hidden" for="noteInput" style="position:absolute;width:1px;height:1px;overflow:hidden;">Write your note</label>
+        <textarea id="noteInput" class="mp-note-input" placeholder="begin your entry&hellip;"></textarea>
+        <div class="mp-pigeon-row">
+          <button class="mp-pigeon-btn" id="pigeonBtn" aria-label="Send this note with the pigeon">
+            <div class="mp-pigeon-wrap">
+              <svg width="74" height="56" viewBox="0 0 72 54" fill="none">
+                <rect x="6" y="44" width="60" height="6" rx="3" fill="#8a6a3c"></rect>
+                <path d="M14 34 L2 40 L16 40 Z" fill="#4a5a78"></path>
+                <ellipse cx="34" cy="30" rx="20" ry="15" fill="#5b6f92"></ellipse>
+                <path d="M22 22 C30 18 40 22 38 34 C30 34 22 30 22 22 Z" fill="#46587a"></path>
+                <circle cx="52" cy="18" r="9" fill="#66799c"></circle>
+                <path d="M60 17 L67 19 L60 21 Z" fill="#d99a3f"></path>
+                <circle cx="55" cy="15" r="1.6" fill="#12172a"></circle>
+                <line x1="28" y1="44" x2="28" y2="40" stroke="#d99a3f" stroke-width="2"></line>
+                <line x1="40" y1="44" x2="40" y2="40" stroke="#d99a3f" stroke-width="2"></line>
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="mp-picker-overlay" id="pickerOverlay">
+    <div class="mp-dark-overlay" id="pickerDark"></div>
+    <div class="mp-beam" id="pickerBeam"></div>
+    <div class="mp-picker-box" id="pickerBox">
+      <button class="mp-picker-close" id="pickerClose">close</button>
+      <div id="categoryList"></div>
+    </div>
+  </div>
+
+  <div class="mp-toast" id="mpToast"></div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc
+  } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAQO6RJHBzF5wHYw49XbF3pm-A1j5hgJAc",
+    authDomain: "vault-9ddb0.firebaseapp.com",
+    projectId: "vault-9ddb0",
+    storageBucket: "vault-9ddb0.firebasestorage.app",
+    messagingSenderId: "42599315639",
+    appId: "1:42599315639:web:7cc5629720045807cff532",
+    measurementId: "G-9LVQG0RM6S"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window._fb = { db, collection, addDoc };
+  window._fbReady = true;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<script>
+/* ============================================================
+   MESSENGER PIGEON — envelope, paper, rolodex categories, and a
+   pigeon that delivers each note straight into The Vault's shared
+   Firestore "artifacts" collection as a small JSON file, named so
+   Action Plan 3000 can later recognize and route it by category.
+   ============================================================ */
+const ARTIFACTS_COLLECTION = 'artifacts';
+const PENDING_KEY = 'messengerPigeon_pendingNotes';
+
+const CATEGORIES = ['Finance', 'Mental Note', 'Work', 'Kaydance', 'Cece', 'Lex', 'Asher', 'Family Events'];
+
+let phase = 'envelope'; // envelope | paper | picker | writing | delivering
+let selectedCategory = null;
+let nudgeTimer = null;
+
+const envelopeScene = document.getElementById('envelopeScene');
+const envelopeBtn = document.getElementById('envelopeBtn');
+const paperGroup = document.getElementById('paperGroup');
+const rolodexBtn = document.getElementById('rolodexBtn');
+const writeArea = document.getElementById('writeArea');
+const noteInput = document.getElementById('noteInput');
+const categoryLabel = document.getElementById('categoryLabel');
+const pigeonBtn = document.getElementById('pigeonBtn');
+const pickerOverlay = document.getElementById('pickerOverlay');
+const pickerDark = document.getElementById('pickerDark');
+const pickerBeam = document.getElementById('pickerBeam');
+const pickerBox = document.getElementById('pickerBox');
+const pickerClose = document.getElementById('pickerClose');
+const categoryList = document.getElementById('categoryList');
+const toastEl = document.getElementById('mpToast');
+
+function restartAnim(el, cls){
+  if(!el) return;
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+}
+
+function render(){
+  envelopeScene.style.display = phase === 'envelope' ? 'flex' : 'none';
+  paperGroup.style.display = phase === 'envelope' ? 'none' : 'block';
+  paperGroup.classList.toggle('mp-delivering', phase === 'delivering');
+  rolodexBtn.style.display = phase === 'paper' ? 'block' : 'none';
+  writeArea.style.display = (phase === 'writing' || phase === 'delivering') ? 'flex' : 'none';
+  pickerOverlay.style.display = phase === 'picker' ? 'block' : 'none';
+  categoryLabel.textContent = selectedCategory || '';
+}
+
+let calendarYear = null, calendarMonth = null;
+function buildCalendar(){
+  const now = new Date();
+  calendarYear = now.getFullYear(); calendarMonth = now.getMonth();
+  const today = now.getDate();
+  const firstDow = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  document.getElementById('calendarMonth').textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const grid = document.getElementById('calendarGrid');
+  let html = '';
+  for(let i = 0; i < firstDow; i++){
+    html += '<div class="mp-calendar-cell"></div>';
+  }
+  for(let d = 1; d <= daysInMonth; d++){
+    html += '<button type="button" class="mp-calendar-cell mp-day' + (d === today ? ' mp-today' : '') + '" data-day="' + d + '">' + d + '</button>';
+  }
+  grid.innerHTML = html;
+}
+
+function insertDateStamp(day, btnEl){
+  if(phase !== 'writing'){
+    showToast('Pick a category first, then stamp a date into the note');
+    return;
+  }
+  const d = new Date(calendarYear, calendarMonth, day);
+  const stampText = '[' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '] ';
+  const start = noteInput.selectionStart != null ? noteInput.selectionStart : noteInput.value.length;
+  const end = noteInput.selectionEnd != null ? noteInput.selectionEnd : noteInput.value.length;
+  noteInput.value = noteInput.value.slice(0, start) + stampText + noteInput.value.slice(end);
+  const caret = start + stampText.length;
+  noteInput.focus();
+  noteInput.setSelectionRange(caret, caret);
+  if(btnEl) btnEl.classList.add('mp-stamped');
+  playDateStamp();
+}
+
+function buildCategoryList(){
+  categoryList.innerHTML = CATEGORIES.map(function(cat){
+    return '<button type="button" class="mp-cat-tab" data-cat="' + cat.replace(/"/g,'&quot;') + '">' + cat + '</button>';
+  }).join('');
+  categoryList.querySelectorAll('.mp-cat-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){ pickCategory(btn.dataset.cat); });
+  });
+}
+
+function openPaper(){
+  phase = 'paper';
+  render();
+  restartAnim(paperGroup, 'mp-anim-in');
+  playRustleChimes();
+  setAmbient('flute');
+}
+function openPicker(){
+  phase = 'picker';
+  render();
+  restartAnim(pickerDark, 'mp-anim-dark');
+  restartAnim(pickerBeam, 'mp-anim-beam');
+  restartAnim(pickerBox, 'mp-anim-box');
+  setAmbient('space');
+}
+function closePicker(){
+  phase = 'paper';
+  render();
+  restartAnim(rolodexBtn, 'mp-anim-in');
+  setAmbient('flute');
+}
+function pickCategory(cat){
+  selectedCategory = cat;
+  phase = 'writing';
+  render();
+  restartAnim(writeArea, 'mp-anim-in');
+  playCameraShutter();
+  setAmbient('flute');
+  setTimeout(function(){ noteInput.focus(); }, 50);
+}
+
+/* ---------- audio: a soft two-note coo ---------- */
+let audioCtx = null;
+function getAudioCtx(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ return null; }
+  }
+  if(audioCtx.state === 'suspended'){ try{ audioCtx.resume(); }catch(e){} }
+  return audioCtx;
+}
+function playCoo(){
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  function makeCoo(delay){
+    try{
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      const t0 = ctx.currentTime + delay;
+      o.frequency.setValueAtTime(340, t0);
+      o.frequency.exponentialRampToValueAtTime(205, t0 + 0.28);
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.13, t0 + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t0); o.stop(t0 + 0.35);
+    }catch(e){}
+  }
+  makeCoo(0);
+  makeCoo(0.34);
+}
+
+/* ============================================================
+   AMBIENT SOUND ENGINE — ocean/seagulls (envelope), gentle flute
+   with echo (writing), space-odyssey beeps/echoes (rolodex picker).
+   A single master gain node is crossfaded between three ambience
+   generators so switching scenes never pops.
+   ============================================================ */
+let masterGain = null;
+let currentAmbient = null;
+let ambientNodes = { ocean: null, flute: null, space: null };
+let ambientTimers = [];
+let noiseBufferCache = null;
+
+function getMasterGain(){
+  const ctx = getAudioCtx();
+  if(!ctx) return null;
+  if(!masterGain){
+    masterGain = ctx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(ctx.destination);
+  }
+  return masterGain;
+}
+
+function ensureNoiseBuffer(){
+  const ctx = getAudioCtx();
+  if(!ctx) return null;
+  if(noiseBufferCache) return noiseBufferCache;
+  const len = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i = 0; i < len; i++){ data[i] = (Math.random() * 2 - 1); }
+  noiseBufferCache = buf;
+  return buf;
+}
+
+function clearAmbientTimers(){
+  ambientTimers.forEach(function(t){ clearTimeout(t); });
+  ambientTimers = [];
+}
+
+/* ---- ocean breeze + seagulls ---- */
+function startOceanAmbient(){
+  const ctx = getAudioCtx();
+  const buf = ensureNoiseBuffer();
+  if(!ctx || !buf) return null;
+  const src = ctx.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  const filt = ctx.createBiquadFilter();
+  filt.type = 'lowpass'; filt.frequency.value = 700;
+  const swell = ctx.createGain();
+  swell.gain.value = 0.5;
+  const lfo = ctx.createOscillator();
+  lfo.type = 'sine'; lfo.frequency.value = 0.12;
+  const lfoGain = ctx.createGain();
+  lfoGain.gain.value = 0.35;
+  lfo.connect(lfoGain); lfoGain.connect(swell.gain);
+  const out = ctx.createGain();
+  out.gain.value = 0.55;
+  src.connect(filt); filt.connect(swell); swell.connect(out);
+  src.start(); lfo.start();
+
+  function scheduleGull(){
+    const delay = 3500 + Math.random() * 6000;
+    const id = setTimeout(function(){
+      if(currentAmbient === 'ocean') playGull();
+      scheduleGull();
+    }, delay);
+    ambientTimers.push(id);
+  }
+  scheduleGull();
+  return { out: out, stop: function(){ try{ src.stop(); }catch(e){} try{ lfo.stop(); }catch(e){} } };
+}
+function playGull(){
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const mg = getMasterGain();
+  const t0 = ctx.currentTime;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(1100, t0);
+  o.frequency.linearRampToValueAtTime(1500, t0 + 0.18);
+  o.frequency.linearRampToValueAtTime(950, t0 + 0.5);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.06, t0 + 0.08);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.55);
+  o.connect(g); g.connect(mg);
+  o.start(t0); o.stop(t0 + 0.6);
+}
+
+/* ---- gentle flute, airy, echoing wind ---- */
+function startFluteAmbient(){
+  const ctx = getAudioCtx();
+  const buf = ensureNoiseBuffer();
+  if(!ctx || !buf) return null;
+  const wind = ctx.createBufferSource();
+  wind.buffer = buf; wind.loop = true;
+  const windFilt = ctx.createBiquadFilter();
+  windFilt.type = 'bandpass'; windFilt.frequency.value = 450; windFilt.Q.value = 0.6;
+  const windGain = ctx.createGain();
+  windGain.gain.value = 0.16;
+  wind.connect(windFilt); windFilt.connect(windGain);
+
+  const delay = ctx.createDelay(2.0);
+  delay.delayTime.value = 0.42;
+  const feedback = ctx.createGain();
+  feedback.gain.value = 0.4;
+  const out = ctx.createGain();
+  out.gain.value = 0.55;
+  windGain.connect(out);
+  wind.start();
+
+  function scheduleFlutePhrase(){
+    const delayMs = 2600 + Math.random() * 3200;
+    const id = setTimeout(function(){
+      if(currentAmbient === 'flute') playFlutePhrase(delay, feedback, out);
+      scheduleFlutePhrase();
+    }, delayMs);
+    ambientTimers.push(id);
+  }
+  scheduleFlutePhrase();
+  return { out: out, stop: function(){ try{ wind.stop(); }catch(e){} } };
+}
+function playFlutePhrase(delayNode, feedbackNode, out){
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const notes = [523.25, 587.33, 659.25, 523.25];
+  const pick = notes.slice(0, 2 + Math.floor(Math.random() * 3));
+  let t = ctx.currentTime;
+  pick.forEach(function(freq){
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.07, t + 0.15);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    o.connect(g);
+    g.connect(out);
+    g.connect(delayNode);
+    delayNode.connect(feedbackNode);
+    feedbackNode.connect(delayNode);
+    feedbackNode.connect(out);
+    o.start(t); o.stop(t + 1);
+    t += 0.42;
+  });
+}
+
+/* ---- futuristic space-odyssey: beeps, bops, echoes ---- */
+function startSpaceAmbient(){
+  const ctx = getAudioCtx();
+  if(!ctx) return null;
+  const drone = ctx.createOscillator();
+  drone.type = 'sine'; drone.frequency.value = 68;
+  const droneGain = ctx.createGain();
+  droneGain.gain.value = 0.09;
+  const droneLfo = ctx.createOscillator();
+  droneLfo.type = 'sine'; droneLfo.frequency.value = 0.08;
+  const droneLfoGain = ctx.createGain();
+  droneLfoGain.gain.value = 0.05;
+  droneLfo.connect(droneLfoGain); droneLfoGain.connect(droneGain.gain);
+
+  const delay = ctx.createDelay(2.0);
+  delay.delayTime.value = 0.34;
+  const feedback = ctx.createGain();
+  feedback.gain.value = 0.45;
+  const out = ctx.createGain();
+  out.gain.value = 0.55;
+  drone.connect(droneGain); droneGain.connect(out);
+  drone.start(); droneLfo.start();
+
+  function scheduleBeep(){
+    const delayMs = 900 + Math.random() * 1800;
+    const id = setTimeout(function(){
+      if(currentAmbient === 'space') playBeep(delay, feedback, out);
+      scheduleBeep();
+    }, delayMs);
+    ambientTimers.push(id);
+  }
+  scheduleBeep();
+  return { out: out, stop: function(){ try{ drone.stop(); }catch(e){} try{ droneLfo.stop(); }catch(e){} } };
+}
+function playBeep(delayNode, feedbackNode, out){
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const t0 = ctx.currentTime;
+  const freq = 500 + Math.random() * 900;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = Math.random() > 0.5 ? 'square' : 'triangle';
+  o.frequency.setValueAtTime(freq, t0);
+  o.frequency.setValueAtTime(freq * (Math.random() > 0.5 ? 1.4 : 0.7), t0 + 0.06);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.05, t0 + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+  o.connect(g);
+  g.connect(out);
+  g.connect(delayNode);
+  delayNode.connect(feedbackNode);
+  feedbackNode.connect(delayNode);
+  feedbackNode.connect(out);
+  o.start(t0); o.stop(t0 + 0.18);
+}
+
+function setAmbient(kind){
+  const ctx = getAudioCtx();
+  const mg = getMasterGain();
+  if(!ctx || !mg) return;
+  if(currentAmbient === kind) return;
+  clearAmbientTimers();
+  const prev = currentAmbient;
+  currentAmbient = kind;
+
+  const now = ctx.currentTime;
+  mg.gain.cancelScheduledValues(now);
+  mg.gain.setValueAtTime(mg.gain.value, now);
+  mg.gain.linearRampToValueAtTime(0, now + 0.5);
+
+  Object.keys(ambientNodes).forEach(function(k){
+    const node = ambientNodes[k];
+    if(node){
+      try{ node.out.disconnect(); }catch(e){}
+      setTimeout(function(){ try{ node.stop(); }catch(e){} }, 600);
+      ambientNodes[k] = null;
+    }
+  });
+
+  setTimeout(function(){
+    if(currentAmbient !== kind) return;
+    let node = null;
+    if(kind === 'ocean') node = startOceanAmbient();
+    else if(kind === 'flute') node = startFluteAmbient();
+    else if(kind === 'space') node = startSpaceAmbient();
+    if(node){
+      node.out.connect(mg);
+      ambientNodes[kind] = node;
+      const t2 = ctx.currentTime;
+      mg.gain.cancelScheduledValues(t2);
+      mg.gain.setValueAtTime(0, t2);
+      mg.gain.linearRampToValueAtTime(0.5, t2 + 0.9);
+    }
+  }, 520);
+}
+
+/* ---- one-shot: paper rustle then chimes (opening the letter) ---- */
+function playRustleChimes(){
+  const ctx = getAudioCtx();
+  const buf = ensureNoiseBuffer();
+  const mg = getMasterGain();
+  if(!ctx || !buf || !mg) return;
+  const t0 = ctx.currentTime;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = 'highpass'; filt.frequency.value = 1400;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.22, t0 + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.42);
+  src.connect(filt); filt.connect(g); g.connect(mg);
+  src.start(t0); src.stop(t0 + 0.45);
+
+  const chimeNotes = [1046.5, 1318.5, 1568, 2093];
+  chimeNotes.forEach(function(freq, i){
+    const ct = t0 + 0.32 + i * 0.13;
+    const o = ctx.createOscillator();
+    const cg = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    cg.gain.setValueAtTime(0, ct);
+    cg.gain.linearRampToValueAtTime(0.08, ct + 0.02);
+    cg.gain.exponentialRampToValueAtTime(0.0001, ct + 0.9);
+    o.connect(cg); cg.connect(mg);
+    o.start(ct); o.stop(ct + 1);
+  });
+}
+
+/* ---- one-shot: old camera shutter click (category picked) ---- */
+function playCameraShutter(){
+  const ctx = getAudioCtx();
+  const buf = ensureNoiseBuffer();
+  const mg = getMasterGain();
+  if(!ctx || !buf || !mg) return;
+  const t0 = ctx.currentTime;
+  const click = ctx.createBufferSource();
+  click.buffer = buf;
+  const clickFilt = ctx.createBiquadFilter();
+  clickFilt.type = 'bandpass'; clickFilt.frequency.value = 2800; clickFilt.Q.value = 3;
+  const clickGain = ctx.createGain();
+  clickGain.gain.setValueAtTime(0.3, t0);
+  clickGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.045);
+  click.connect(clickFilt); clickFilt.connect(clickGain); clickGain.connect(mg);
+  click.start(t0); click.stop(t0 + 0.05);
+
+  const t1 = t0 + 0.075;
+  const clunk = ctx.createBufferSource();
+  clunk.buffer = buf;
+  const clunkFilt = ctx.createBiquadFilter();
+  clunkFilt.type = 'lowpass'; clunkFilt.frequency.value = 500;
+  const clunkGain = ctx.createGain();
+  clunkGain.gain.setValueAtTime(0.28, t1);
+  clunkGain.gain.exponentialRampToValueAtTime(0.001, t1 + 0.11);
+  clunk.connect(clunkFilt); clunkFilt.connect(clunkGain); clunkGain.connect(mg);
+  clunk.start(t1); clunk.stop(t1 + 0.12);
+}
+
+/* ---- one-shot: typewriter clack (per keystroke) ---- */
+function playTypewriterClack(){
+  const ctx = getAudioCtx();
+  const buf = ensureNoiseBuffer();
+  const mg = getMasterGain();
+  if(!ctx || !buf || !mg) return;
+  const t0 = ctx.currentTime;
+  const key = ctx.createBufferSource();
+  key.buffer = buf;
+  const keyFilt = ctx.createBiquadFilter();
+  keyFilt.type = 'bandpass'; keyFilt.frequency.value = 3200; keyFilt.Q.value = 2;
+  const keyGain = ctx.createGain();
+  keyGain.gain.setValueAtTime(0.16 + Math.random() * 0.06, t0);
+  keyGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.03);
+  key.connect(keyFilt); keyFilt.connect(keyGain); keyGain.connect(mg);
+  key.start(t0); key.stop(t0 + 0.035);
+
+  const t1 = t0 + 0.02;
+  const thunk = ctx.createBufferSource();
+  thunk.buffer = buf;
+  const thunkFilt = ctx.createBiquadFilter();
+  thunkFilt.type = 'lowpass'; thunkFilt.frequency.value = 320;
+  const thunkGain = ctx.createGain();
+  thunkGain.gain.setValueAtTime(0.13, t1);
+  thunkGain.gain.exponentialRampToValueAtTime(0.001, t1 + 0.06);
+  thunk.connect(thunkFilt); thunkFilt.connect(thunkGain); thunkGain.connect(mg);
+  thunk.start(t1); thunk.stop(t1 + 0.07);
+}
+
+/* ---- one-shot: ink stamp thud (calendar date clicked) ---- */
+function playDateStamp(){
+  const ctx = getAudioCtx();
+  const buf = ensureNoiseBuffer();
+  const mg = getMasterGain();
+  if(!ctx || !buf || !mg) return;
+  const t0 = ctx.currentTime;
+  const thud = ctx.createBufferSource();
+  thud.buffer = buf;
+  const thudFilt = ctx.createBiquadFilter();
+  thudFilt.type = 'lowpass'; thudFilt.frequency.value = 260;
+  const thudGain = ctx.createGain();
+  thudGain.gain.setValueAtTime(0.24, t0);
+  thudGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+  thud.connect(thudFilt); thudFilt.connect(thudGain); thudGain.connect(mg);
+  thud.start(t0); thud.stop(t0 + 0.1);
+
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(180, t0);
+  o.frequency.exponentialRampToValueAtTime(90, t0 + 0.08);
+  g.gain.setValueAtTime(0.12, t0);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.1);
+  o.connect(g); g.connect(mg);
+  o.start(t0); o.stop(t0 + 0.11);
+}
+
+function nudgePigeon(){
+  pigeonBtn.classList.add('mp-nudge');
+  clearTimeout(nudgeTimer);
+  nudgeTimer = setTimeout(function(){ pigeonBtn.classList.remove('mp-nudge'); }, 320);
+}
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('mp-show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toastEl.classList.remove('mp-show'); }, 2600);
+}
+
+/* ---------- Vault delivery ---------- */
+function waitForFirebase(){
+  return new Promise(function(resolve){
+    if(window._fbReady){ resolve(); return; }
+    window.addEventListener('firebase-ready', function(){ resolve(); }, { once: true });
+  });
+}
+function slugify(s){
+  return (s || 'note').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'note';
+}
+function utf8ToBase64(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+async function sendToVault(entry){
+  await waitForFirebase();
+  const stamp = entry.ts.replace(/[:.]/g, '-');
+  const name = 'mp-' + slugify(entry.category) + '-' + stamp + '.json';
+  const json = JSON.stringify(entry);
+  const dataBase64 = utf8ToBase64(json);
+  const { db, collection, addDoc } = window._fb;
+  await addDoc(collection(db, ARTIFACTS_COLLECTION), {
+    name: name,
+    type: 'application/json',
+    size: new Blob([json]).size,
+    dateAdded: Date.now(),
+    dataBase64: dataBase64
+  });
+}
+function queueLocally(entry){
+  let pending = [];
+  try{ pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); }catch(e){}
+  pending.push(entry);
+  try{ localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); }catch(e){}
+}
+async function flushPending(){
+  let pending = [];
+  try{ pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); }catch(e){}
+  if(!pending.length) return;
+  const remaining = [];
+  for(const entry of pending){
+    try{ await sendToVault(entry); }
+    catch(e){ remaining.push(entry); }
+  }
+  try{ localStorage.setItem(PENDING_KEY, JSON.stringify(remaining)); }catch(e){}
+  if(remaining.length < pending.length){
+    showToast((pending.length - remaining.length) + ' note(s) that were waiting reached the Vault');
+  }
+}
+
+async function deliverNote(){
+  const text = (noteInput.value || '').trim();
+  if(!text){
+    nudgePigeon();
+    return;
+  }
+  const entry = { kind: 'messenger-pigeon-note', category: selectedCategory, text: text, ts: new Date().toISOString() };
+  playCoo();
+  phase = 'delivering';
+  render();
+
+  sendToVault(entry).then(function(){
+    showToast('Delivered to the Vault — ' + selectedCategory);
+  }).catch(function(){
+    queueLocally(entry);
+    showToast('Vault unreachable — saved locally, will retry next visit');
+  });
+
+  setTimeout(function(){
+    phase = 'envelope';
+    selectedCategory = null;
+    noteInput.value = '';
+    render();
+    setAmbient('ocean');
+  }, 1150);
+}
+
+/* ---------- wire up events ---------- */
+envelopeBtn.addEventListener('click', openPaper);
+rolodexBtn.addEventListener('click', openPicker);
+pickerClose.addEventListener('click', closePicker);
+pigeonBtn.addEventListener('click', deliverNote);
+noteInput.addEventListener('input', function(){ playTypewriterClack(); });
+document.getElementById('calendarGrid').addEventListener('click', function(e){
+  const btn = e.target.closest('.mp-day');
+  if(!btn) return;
+  insertDateStamp(parseInt(btn.dataset.day, 10), btn);
+});
+
+/* ---------- unlock audio + start ambience on first touch ---------- */
+let audioUnlocked = false;
+function unlockAudio(){
+  if(audioUnlocked) return;
+  audioUnlocked = true;
+  getAudioCtx();
+  setAmbient('ocean');
+  document.removeEventListener('pointerdown', unlockAudio);
+  document.removeEventListener('keydown', unlockAudio);
+}
+document.addEventListener('pointerdown', unlockAudio, { once: true });
+document.addEventListener('keydown', unlockAudio, { once: true });
+
+/* ---------- init ---------- */
+buildCalendar();
+buildCategoryList();
+render();
+waitForFirebase().then(flushPending);
+</script>
+</body>
+</html>
